@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>hang out?</title>
+<style>
+  :root{
+    --cream: #FBF7EE;
+    --cream-2: #F3EEDF;
+    --white: #FFFFFF;
+    --sage: #8FAE86;
+    --sage-deep: #5C7A52;
+    --sage-dark: #3F5936;
+    --leaf: #A9C49E;
+    --ink: #2E3A29;
+    --ink-soft: #5B6B54;
+    --shadow: 0 10px 30px rgba(74, 94, 62, 0.14);
+    --shadow-sm: 0 4px 14px rgba(74, 94, 62, 0.12);
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --ease: cubic-bezier(.22,1,.36,1);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0;
+    height:100%;
+    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-2) 100%);
+    font-family: -apple-system, "SF Pro Rounded", "Segoe UI Rounded", "Segoe UI", ui-rounded, system-ui, sans-serif;
+    color: var(--ink);
+    overscroll-behavior: none;
+  }
+  body{
+    min-height: 100dvh;
+    display:flex;
+    flex-direction:column;
+    overflow-x: hidden;
+    touch-action: manipulation;
+  }
+  h1,h2,h3,p{ margin:0; }
+  button{
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  input, textarea{ font-family: inherit; }
+
+  ::selection{ background: var(--leaf); color: var(--sage-dark); }
+
+  /* ---------- App shell ---------- */
+  #app{
+    position: relative;
+    flex: 1;
+    display:flex;
+    flex-direction:column;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 0;
+    isolation: isolate;
+  }
+
+  /* ---------- Ambient background ---------- */
+  #bg-layer{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .drift{
+    position:absolute;
+    opacity: 0.55;
+    color: var(--sage);
+    animation: float-up linear infinite;
+    will-change: transform;
+  }
+  .drift.leafy{ color: var(--leaf); }
+  @keyframes float-up{
+    0%{ transform: translateY(10vh) translateX(0) rotate(0deg); opacity:0; }
+    10%{ opacity: .55; }
+    90%{ opacity: .45; }
+    100%{ transform: translateY(-115vh) translateX(var(--drift-x, 20px)) rotate(var(--drift-r, 40deg)); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .drift{ animation: none; display:none; }
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{
+    display:none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    width: 100%;
+    padding: 28px 20px 40px;
+    position: relative;
+    z-index: 1;
+  }
+  .screen.active{
+    display:flex;
+  }
+  .screen.entering{
+    animation: screen-in .55s var(--ease) both;
+  }
+  @keyframes screen-in{
+    from{ opacity:0; transform: translateY(18px) scale(.985); }
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .screen.entering{ animation: none; }
+  }
+
+  .eyebrow{
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--sage-deep);
+    font-weight: 700;
+    margin-bottom: 10px;
+    opacity: .85;
+  }
+
+  .headline{
+    font-size: clamp(26px, 7vw, 36px);
+    font-weight: 800;
+    line-height: 1.2;
+    text-align:center;
+    color: var(--sage-dark);
+    max-width: 22ch;
+    letter-spacing: -0.01em;
+  }
+  .subtext{
+    margin-top: 10px;
+    font-size: 15.5px;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 34ch;
+    line-height: 1.5;
+  }
+
+  .card{
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    width: 100%;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .18s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease);
+    touch-action: manipulation;
+  }
+  .btn:active{ transform: scale(0.96); }
+
+  .btn-primary{
+    background: linear-gradient(135deg, var(--sage) 0%, var(--sage-deep) 100%);
+    color: var(--white);
+    box-shadow: 0 8px 20px rgba(92, 122, 82, 0.35);
+  }
+  .btn-primary:hover{ box-shadow: 0 10px 24px rgba(92, 122, 82, 0.45); }
+  .btn-primary:disabled{
+    opacity: .5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn-ghost{
+    background: var(--white);
+    color: var(--sage-dark);
+    border: 1.5px solid rgba(92,122,82,0.25);
+  }
+
+  .btn-outline{
+    background: transparent;
+    color: var(--sage-deep);
+    border: 1.5px solid var(--sage);
+  }
+
+  /* ---------- Screen 1: Question ---------- */
+  .flower-mark{
+    width: 56px; height:56px;
+    margin-bottom: 18px;
+    color: var(--sage);
+    animation: sway 4s ease-in-out infinite;
+  }
+  @keyframes sway{
+    0%,100%{ transform: rotate(-4deg); }
+    50%{ transform: rotate(4deg); }
+  }
+  @media (prefers-reduced-motion: reduce){ .flower-mark{ animation:none; } }
+
+  .q-hint{
+    margin-top: 22px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align:center;
+    max-width: 30ch;
+    opacity: .8;
+  }
+
+  #choice-row{
+    position: relative;
+    display:flex;
+    gap: 12px;
+    margin-top: 30px;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+  #choice-row .btn{
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+    padding: 14px 8px;
+    font-size: clamp(13px, 4vw, 16px);
+  }
+  #btn-yes{ order:1; }
+  #btn-maybe{ order:2; }
+  #btn-no{
+    order:3;
+    position: relative;
+    z-index: 5;
+  }
+
+  /* When NO button goes "loose" it becomes fixed-position and roams the viewport */
+  #btn-no.roaming{
+    position: fixed;
+    z-index: 50;
+    top: 0; left: 0;
+    transition: transform .32s var(--ease);
+  }
+
+  /* ---------- Toast ---------- */
+  #toast-wrap{
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-140%);
+    z-index: 100;
+    width: min(92vw, 420px);
+    display:flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    transition: transform .45s var(--ease);
+  }
+  #toast-wrap.show{ transform: translateX(-50%) translateY(0); }
+  .toast{
+    background: var(--sage-dark);
+    color: var(--white);
+    padding: 14px 18px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+    font-weight: 700;
+    font-size: 14.5px;
+    text-align:center;
+    line-height: 1.4;
+  }
+  .toast.sub{
+    background: var(--white);
+    color: var(--sage-dark);
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(46, 58, 41, 0.35);
+    backdrop-filter: blur(3px);
+    z-index: 90;
+    display:none;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  .modal-overlay.show{ display:flex; }
+  @media (min-width: 520px){
+    .modal-overlay{ align-items:center; }
+  }
+  .modal-sheet{
+    background: var(--white);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 26px 26px 0 0;
+    padding: 26px 22px calc(26px + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 40px rgba(46,58,41,0.25);
+    text-align:center;
+    animation: sheet-up .4s var(--ease) both;
+  }
+  @media (min-width: 520px){
+    .modal-sheet{ border-radius: 26px; margin-bottom: 20px; animation: sheet-pop .3s var(--ease) both; }
+  }
+  @keyframes sheet-up{ from{ transform: translateY(100%);} to{ transform: translateY(0);} }
+  @keyframes sheet-pop{ from{ opacity:0; transform: scale(.92);} to{ opacity:1; transform: scale(1);} }
+  .modal-sheet p{ font-size: 15.5px; line-height:1.5; color: var(--ink); margin-bottom: 18px; }
+  .modal-sheet .btn{ width:100%; }
+
+  /* ---------- Screen 2: Calendar ---------- */
+  .cal-card{ margin-top: 22px; }
+  .cal-head{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .cal-month{
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--sage-dark);
+  }
+  .cal-nav{
+    display:flex; gap: 8px;
+  }
+  .cal-nav-btn{
+    width: 36px; height:36px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(92,122,82,0.25);
+    background: var(--white);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    color: var(--sage-deep);
+    transition: background .15s var(--ease), transform .15s var(--ease);
+  }
+  .cal-nav-btn:active{ transform: scale(.9); }
+  .cal-nav-btn:disabled{ opacity:.3; cursor:not-allowed; }
+
+  .cal-weekdays, .cal-grid{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-weekdays div{
+    text-align:center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    padding: 4px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .cal-day{
+    aspect-ratio: 1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    cursor:pointer;
+    min-height: 38px;
+    transition: background .15s var(--ease), color .15s var(--ease), transform .15s var(--ease);
+  }
+  .cal-day:active{ transform: scale(.9); }
+  .cal-day.empty{ visibility: hidden; cursor:default; }
+  .cal-day.disabled{
+    color: #C9CFC2;
+    cursor: not-allowed;
+  }
+  .cal-day.today{
+    box-shadow: inset 0 0 0 1.5px var(--sage);
+    color: var(--sage-dark);
+  }
+  .cal-day.selected{
+    background: linear-gradient(135deg, var(--sage) 0%, var(--sage-deep) 100%);
+    color: var(--white);
+    box-shadow: 0 6px 14px rgba(92,122,82,0.4);
+  }
+  .cal-day:not(.disabled):not(.empty):hover{
+    background: var(--cream-2);
+  }
+  .cal-day.selected:hover{ background: var(--sage-deep); }
+
+  .section-label{
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--sage-deep);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin: 22px 0 10px;
+  }
+
+  #time-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .time-btn{
+    padding: 12px 8px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid rgba(92,122,82,0.22);
+    background: var(--white);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    cursor:pointer;
+    transition: all .15s var(--ease);
+  }
+  .time-btn:active{ transform: scale(.96); }
+  .time-btn.selected{
+    background: linear-gradient(135deg, var(--sage) 0%, var(--sage-deep) 100%);
+    border-color: transparent;
+    color: var(--white);
+    box-shadow: 0 6px 14px rgba(92,122,82,0.35);
+  }
+
+  #custom-time-wrap{
+    display:none;
+    margin-top: 10px;
+  }
+  #custom-time-wrap.show{ display:block; }
+  #custom-time{
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid rgba(92,122,82,0.25);
+    font-size: 15px;
+    background: var(--white);
+    color: var(--ink);
+  }
+
+  .screen-actions{
+    width:100%;
+    margin-top: 26px;
+    display:flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .screen-actions .btn{ width:100%; }
+
+  .top-note{
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(160%);
+    z-index: 95;
+    background: var(--sage-dark);
+    color:#fff;
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: transform .35s var(--ease);
+    width: min(90vw, 380px);
+    text-align:center;
+  }
+  .top-note.show{ transform: translateX(-50%) translateY(0); }
+
+  /* ---------- Screen 3: Activities ---------- */
+  #activity-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width:100%;
+    margin-top: 8px;
+  }
+  .activity-card{
+    background: var(--white);
+    border: 1.5px solid rgba(92,122,82,0.16);
+    border-radius: var(--radius-md);
+    padding: 14px 12px;
+    text-align:left;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    gap: 8px;
+    transition: all .18s var(--ease);
+    box-shadow: var(--shadow-sm);
+  }
+  .activity-card:active{ transform: scale(.97); }
+  .activity-card svg{
+    width: 26px; height:26px;
+    color: var(--sage-deep);
+  }
+  .activity-card .a-title{
+    font-weight: 800;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+  .activity-card .a-desc{
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.35;
+  }
+  .activity-card.selected{
+    background: linear-gradient(160deg, rgba(143,174,134,0.18), rgba(255,255,255,0.9));
+    border-color: var(--sage);
+    box-shadow: 0 0 0 2px var(--sage) inset, var(--shadow-sm);
+    animation: pop-select .3s var(--ease);
+  }
+  .activity-card.selected svg{ color: var(--sage-dark); }
+  @keyframes pop-select{
+    0%{ transform: scale(1); }
+    45%{ transform: scale(1.035); }
+    100%{ transform: scale(1); }
+  }
+  .activity-card.wide{ grid-column: span 2; flex-direction:row; align-items:center; }
+  .activity-card.wide .a-text{ display:flex; flex-direction:column; gap:2px; }
+
+  #other-wrap{
+    display:none;
+    margin-top: 12px;
+    width:100%;
+  }
+  #other-wrap.show{ display:block; }
+  #other-input{
+    width:100%;
+    min-height: 70px;
+    resize: vertical;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid rgba(92,122,82,0.25);
+    font-size: 14.5px;
+    background: var(--white);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  /* ---------- Screen 4: Summary ---------- */
+  .summary-card{ margin-top: 20px; }
+  .summary-row{
+    display:flex;
+    gap: 14px;
+    align-items:flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(92,122,82,0.12);
+  }
+  .summary-row:last-child{ border-bottom:none; }
+  .summary-row svg{
+    width: 22px; height:22px;
+    color: var(--sage-deep);
+    flex-shrink:0;
+    margin-top:2px;
+  }
+  .summary-row .s-label{
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--sage-deep);
+    margin-bottom: 3px;
+  }
+  .summary-row .s-value{
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height:1.4;
+  }
+
+  .dual-actions{
+    display:flex;
+    gap: 10px;
+    margin-top: 24px;
+    width:100%;
+  }
+  .dual-actions .btn{ flex:1; }
+
+  /* ---------- Screen 5: Final ---------- */
+  .final-icon{
+    width: 64px; height: 64px;
+    color: var(--sage);
+    margin-bottom: 16px;
+    animation: bloom .7s var(--ease) both;
+  }
+  @keyframes bloom{
+    from{ opacity:0; transform: scale(.6) rotate(-15deg); }
+    to{ opacity:1; transform: scale(1) rotate(0); }
+  }
+  @media (prefers-reduced-motion: reduce){ .final-icon{ animation:none; } }
+
+  #confetti-layer{
+    position: fixed;
+    inset:0;
+    pointer-events:none;
+    z-index: 3;
+    overflow:hidden;
+  }
+  .confetti-piece{
+    position:absolute;
+    top: -5%;
+    border-radius: 3px;
+    animation: confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall{
+    to{ transform: translateY(115vh) rotate(var(--rot, 260deg)); opacity: .9; }
+  }
+
+  .whatsapp-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 10px;
+    width:100%;
+    margin-top: 12px;
+    background: linear-gradient(135deg, #3F5936 0%, #2E3A29 100%);
+    color: #fff;
+    padding: 16px 20px;
+    font-size: 16px;
+    box-shadow: 0 10px 26px rgba(46,58,41,0.35);
+  }
+  .whatsapp-btn svg{ width:22px; height:22px; }
+
+  .send-label{
+    margin-top: 30px;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--sage-deep);
+  }
+
+  .visually-hidden{
+    position:absolute;
+    width:1px; height:1px;
+    overflow:hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  /* Focus visibility */
+  button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline: 2.5px solid var(--sage-deep);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 340px){
+    #choice-row{ gap: 8px; }
+    #choice-row .btn{ padding: 12px 6px; font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bg-layer" aria-hidden="true"></div>
+
+<div id="app">
+
+  <!-- SCREEN 1 -->
+  <section class="screen active entering" id="screen-1" data-screen="1">
+    <svg class="flower-mark" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="24" cy="24" r="4.5"/>
+      <path d="M24 19.5C24 12 20 8 15 8c0 6 3.5 10 9 11.5"/>
+      <path d="M24 19.5C24 12 28 8 33 8c0 6-3.5 10-9 11.5"/>
+      <path d="M28.5 24C36 24 40 20 40 15c-6 0-10 3.5-11.5 9"/>
+      <path d="M28.5 24C36 24 40 28 40 33c-6 0-10-3.5-11.5-9"/>
+      <path d="M24 28.5C24 36 28 40 33 40c0-6-3.5-10-9-11.5"/>
+      <path d="M24 28.5C24 36 20 40 15 40c0-6 3.5-10 9-11.5"/>
+      <path d="M19.5 24C12 24 8 28 8 33c6 0 10-3.5 11.5-9"/>
+      <path d="M19.5 24C12 24 8 20 8 15c6 0 10 3.5 11.5 9"/>
+    </svg>
+
+    <h1 class="headline">Do you wanna hang out with me?</h1>
+    <p class="q-hint">No pressure. Although I have a feeling you already know which button you should press.</p>
+
+    <div id="choice-row">
+      <button class="btn btn-primary" id="btn-yes" type="button">YES</button>
+      <button class="btn btn-outline" id="btn-maybe" type="button">MAYBE</button>
+      <button class="btn btn-ghost" id="btn-no" type="button">NO</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section class="screen" id="screen-2" data-screen="2">
+    <p class="eyebrow">Step 1 of 3</p>
+    <h2 class="headline">When are you free?</h2>
+    <p class="subtext">Pick a day that works for you.</p>
+
+    <div class="card cal-card">
+      <div class="cal-head">
+        <button class="cal-nav-btn" id="cal-prev" type="button" aria-label="Previous month">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="cal-month" id="cal-month-label">Month Year</div>
+        <button class="cal-nav-btn" id="cal-next" type="button" aria-label="Next month">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div class="cal-weekdays">
+        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <p class="section-label">What time works?</p>
+    <div id="time-grid"></div>
+    <div id="custom-time-wrap">
+      <input type="time" id="custom-time" aria-label="Custom time">
+    </div>
+
+    <div class="screen-actions">
+      <button class="btn btn-primary" id="btn-to-3" type="button">CONTINUE</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section class="screen" id="screen-3" data-screen="3">
+    <p class="eyebrow">Step 2 of 3</p>
+    <h2 class="headline">What do you wanna do?</h2>
+    <p class="subtext">Pick one or a few. I'm not judging.</p>
+
+    <div id="activity-grid"></div>
+
+    <div id="other-wrap">
+      <textarea id="other-input" placeholder="Okay, I'm listening... what did you have in mind?"></textarea>
+    </div>
+
+    <div class="screen-actions">
+      <button class="btn btn-primary" id="btn-to-4" type="button">CONTINUE</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 4 -->
+  <section class="screen" id="screen-4" data-screen="4">
+    <p class="eyebrow">Step 3 of 3</p>
+    <h2 class="headline">So we're doing this?</h2>
+    <p class="subtext">Here's the plan. Make sure everything looks good.</p>
+
+    <div class="card summary-card">
+      <div class="summary-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+        <div>
+          <div class="s-label">Date</div>
+          <div class="s-value" id="sum-date">—</div>
+        </div>
+      </div>
+      <div class="summary-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        <div>
+          <div class="s-label">Time</div>
+          <div class="s-value" id="sum-time">—</div>
+        </div>
+      </div>
+      <div class="summary-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.5-9C.7 8.4 2.3 5 5.8 5c2 0 3.4 1.1 4.2 2.4C10.8 6.1 12.2 5 14.2 5c3.5 0 5.1 3.4 3.3 7-2.5 4.4-5.5 9-5.5 9z"/></svg>
+        <div>
+          <div class="s-label">We're doing</div>
+          <div class="s-value" id="sum-activities">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dual-actions">
+      <button class="btn btn-ghost" id="btn-change" type="button">CHANGE</button>
+      <button class="btn btn-primary" id="btn-lock" type="button">LOCK IT IN</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 5 -->
+  <section class="screen" id="screen-5" data-screen="5">
+    <svg class="final-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="24" cy="24" r="4.5"/>
+      <path d="M24 19.5C24 12 20 8 15 8c0 6 3.5 10 9 11.5"/>
+      <path d="M24 19.5C24 12 28 8 33 8c0 6-3.5 10-9 11.5"/>
+      <path d="M28.5 24C36 24 40 20 40 15c-6 0-10 3.5-11.5 9"/>
+      <path d="M28.5 24C36 24 40 28 40 33c-6 0-10-3.5-11.5-9"/>
+      <path d="M24 28.5C24 36 28 40 33 40c0-6-3.5-10-9-11.5"/>
+      <path d="M24 28.5C24 36 20 40 15 40c0-6 3.5-10 9-11.5"/>
+      <path d="M19.5 24C12 24 8 28 8 33c6 0 10-3.5 11.5-9"/>
+      <path d="M19.5 24C12 24 8 20 8 15c6 0 10 3.5 11.5 9"/>
+    </svg>
+    <h2 class="headline" id="final-headline">AWW, IT'S A PLAN.</h2>
+    <p class="subtext">I'll see you then.</p>
+
+    <p class="send-label">Send the plan</p>
+    <button class="btn whatsapp-btn" id="btn-whatsapp" type="button">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.5-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+      SEND ON WHATSAPP
+    </button>
+  </section>
+
+</div>
+
+<div id="toast-wrap" aria-live="polite"></div>
+<div class="top-note" id="top-note"></div>
+<div id="confetti-layer" aria-hidden="true"></div>
+
+<div class="modal-overlay" id="maybe-modal">
+  <div class="modal-sheet">
+    <p>MAYBE IS PRACTICALLY THE SAME AS YES HEHE</p>
+    <button class="btn btn-primary" id="maybe-continue" type="button">Okay fine, continue</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="expensive-modal">
+  <div class="modal-sheet">
+    <p><strong>Okay, about that...</strong><br><br>I would absolutely be down, but my bank account currently has other plans for me. If you really want that option though, you could sponsor the mission.</p>
+    <button class="btn btn-primary" id="expensive-close" type="button">Fair enough</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============ Ambient background ============ */
+  function buildBackground(){
+    var layer = document.getElementById('bg-layer');
+    if(reduceMotion) return;
+    var icons = [
+      // simple flower
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="2.2"/><path d="M12 9.5C12 6 10 4 7.5 4c0 3.5 1.7 5.5 4.5 5.5M12 9.5C12 6 14 4 16.5 4c0 3.5-1.7 5.5-4.5 5.5M14.5 12C18 12 20 10 20 7.5c-3.5 0-5.5 1.7-5.5 4.5M14.5 12C18 12 20 14 20 16.5c-3.5 0-5.5-1.7-5.5-4.5M12 14.5c0 3.5 2 5.5 4.5 5.5 0-3.5-1.7-5.5-4.5-5.5M12 14.5c0 3.5-2 5.5-4.5 5.5 0-3.5 1.7-5.5 4.5-5.5M9.5 12C6 12 4 14 4 16.5c3.5 0 5.5-1.7 5.5-4.5M9.5 12C6 12 4 10 4 7.5c3.5 0 5.5 1.7 5.5 4.5"/></svg>',
+      // leaf
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20c8 0 14-6 16-16C10 6 4 12 4 20z"/><path d="M5 19c4-4 7-8 9-13"/></svg>',
+      // small petal dot
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/></svg>'
+    ];
+    var count = window.innerWidth < 480 ? 9 : 14;
+    for(var i=0;i<count;i++){
+      var d = document.createElement('div');
+      var isLeaf = Math.random() > 0.5;
+      d.className = 'drift' + (isLeaf ? ' leafy' : '');
+      d.innerHTML = icons[Math.floor(Math.random()*icons.length)];
+      var size = 14 + Math.random()*18;
+      d.style.width = size + 'px';
+      d.style.height = size + 'px';
+      d.style.left = (Math.random()*96) + 'vw';
+      d.style.setProperty('--drift-x', (Math.random()*80 - 40) + 'px');
+      d.style.setProperty('--drift-r', (Math.random()*80 - 40) + 'deg');
+      var dur = 16 + Math.random()*18;
+      d.style.animationDuration = dur + 's';
+      d.style.animationDelay = (-Math.random()*dur) + 's';
+      layer.appendChild(d);
+    }
+  }
+  buildBackground();
+
+  /* ============ Screen navigation ============ */
+  var screens = Array.prototype.slice.call(document.querySelectorAll('.screen'));
+  function goToScreen(n){
+    screens.forEach(function(s){
+      s.classList.remove('active', 'entering');
+    });
+    var target = document.getElementById('screen-' + n);
+    target.classList.add('active');
+    void target.offsetWidth; // reflow to restart animation
+    target.classList.add('entering');
+    window.scrollTo(0,0);
+  }
+
+  /* ============ Toast ============ */
+  var toastWrap = document.getElementById('toast-wrap');
+  var toastTimer = null;
+  function showToast(lines, duration){
+    clearTimeout(toastTimer);
+    toastWrap.innerHTML = '';
+    lines.forEach(function(line, idx){
+      var t = document.createElement('div');
+      t.className = 'toast' + (idx > 0 ? ' sub' : '');
+      t.textContent = line;
+      toastWrap.appendChild(t);
+    });
+    requestAnimationFrame(function(){ toastWrap.classList.add('show'); });
+    toastTimer = setTimeout(function(){
+      toastWrap.classList.remove('show');
+    }, duration || 2600);
+  }
+
+  var noteTimer = null;
+  function showNote(text){
+    var note = document.getElementById('top-note');
+    clearTimeout(noteTimer);
+    note.textContent = text;
+    note.classList.add('show');
+    noteTimer = setTimeout(function(){ note.classList.remove('show'); }, 2200);
+  }
+
+  /* ============ SCREEN 1: Question ============ */
+  var btnYes = document.getElementById('btn-yes');
+  var btnMaybe = document.getElementById('btn-maybe');
+  var btnNo = document.getElementById('btn-no');
+  var maybeModal = document.getElementById('maybe-modal');
+
+  btnYes.addEventListener('click', function(){
+    showToast(["AWWWRR you actually said yes", "Okayyy, I wasn't expecting that"], 2200);
+    setTimeout(function(){ goToScreen(2); }, 1300);
+  });
+
+  btnMaybe.addEventListener('click', function(){
+    maybeModal.classList.add('show');
+  });
+  document.getElementById('maybe-continue').addEventListener('click', function(){
+    maybeModal.classList.remove('show');
+    goToScreen(2);
+  });
+
+  // ---- NO button avoidance logic ----
+  var noPhrases = ["NO", "Are you sure?", "Really?", "Think again", "Nice try", "You can't catch me"];
+  var noPhraseIndex = 0;
+  var noEscapeCount = 0;
+  var noIsRoaming = false;
+  var PROXIMITY_PX = 110;
+  var lastMoveTime = 0;
+
+  function setNoText(){
+    var idx = Math.min(noPhraseIndex, noPhrases.length - 1);
+    btnNo.textContent = noPhrases[idx];
+  }
+
+  function getSafeBounds(){
+    var pad = 14;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var rect = btnNo.getBoundingClientRect();
+    var w = rect.width || 90;
+    var h = rect.height || 48;
+    return {
+      minX: pad,
+      maxX: Math.max(pad, vw - w - pad),
+      minY: pad + 8,
+      maxY: Math.max(pad, vh - h - pad - 8),
+      w: w, h: h
+    };
+  }
+
+  function distance(ax, ay, bx, by){
+    var dx = ax-bx, dy = ay-by;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function moveNoButton(pointerX, pointerY){
+    var bounds = getSafeBounds();
+    var candidates = [];
+    var attempts = 0;
+    var minDistFromPointer = Math.max(140, PROXIMITY_PX + 40);
+
+    // shrink requirement if viewport is very small
+    var usableW = bounds.maxX - bounds.minX;
+    var usableH = bounds.maxY - bounds.minY;
+    if(usableW < 160 || usableH < 160){
+      minDistFromPointer = Math.min(minDistFromPointer, 70);
+    }
+
+    var chosen = null;
+    while(attempts < 24 && !chosen){
+      attempts++;
+      var x = bounds.minX + Math.random() * usableW;
+      var y = bounds.minY + Math.random() * usableH;
+      var centerX = x + bounds.w/2;
+      var centerY = y + bounds.h/2;
+      var d = (pointerX != null) ? distance(centerX, centerY, pointerX, pointerY) : minDistFromPointer + 1;
+      if(d >= minDistFromPointer){
+        chosen = {x:x, y:y};
+      }
+    }
+    if(!chosen){
+      // fallback: farthest corner-ish safe spot
+      var corners = [
+        {x:bounds.minX, y:bounds.minY},
+        {x:bounds.maxX, y:bounds.minY},
+        {x:bounds.minX, y:bounds.maxY},
+        {x:bounds.maxX, y:bounds.maxY}
+      ];
+      corners.sort(function(a,b){
+        var da = pointerX != null ? distance(a.x+bounds.w/2, a.y+bounds.h/2, pointerX, pointerY) : 0;
+        var db = pointerX != null ? distance(b.x+bounds.w/2, b.y+bounds.h/2, pointerX, pointerY) : 0;
+        return db - da;
+      });
+      chosen = corners[0];
+    }
+
+    if(!noIsRoaming){
+      // convert from static layout to fixed roaming
+      var currentRect = btnNo.getBoundingClientRect();
+      btnNo.style.width = currentRect.width + 'px';
+      btnNo.classList.add('roaming');
+      noIsRoaming = true;
+    }
+    btnNo.style.transform = 'translate(' + chosen.x + 'px,' + chosen.y + 'px)';
+
+    noEscapeCount++;
+    noPhraseIndex = Math.min(noEscapeCount, noPhrases.length - 1);
+    setNoText();
+  }
+
+  // Desktop / pen: proximity via pointermove
+  document.addEventListener('pointermove', function(e){
+    if(e.pointerType === 'touch') return; // handled separately for touch
+    var now = Date.now();
+    if(now - lastMoveTime < 60) return;
+    var rect = btnNo.getBoundingClientRect();
+    var cx = rect.left + rect.width/2;
+    var cy = rect.top + rect.height/2;
+    var d = distance(e.clientX, e.clientY, cx, cy);
+    if(d < PROXIMITY_PX){
+      lastMoveTime = now;
+      moveNoButton(e.clientX, e.clientY);
+    }
+  }, {passive:true});
+
+  // Touch: proximity via touchmove + immediate escape on touchstart near/on the button
+  function handleTouchAvoid(touch){
+    var now = Date.now();
+    if(now - lastMoveTime < 60) return;
+    var rect = btnNo.getBoundingClientRect();
+    var cx = rect.left + rect.width/2;
+    var cy = rect.top + rect.height/2;
+    var d = distance(touch.clientX, touch.clientY, cx, cy);
+    if(d < PROXIMITY_PX + 24){
+      lastMoveTime = now;
+      moveNoButton(touch.clientX, touch.clientY);
+    }
+  }
+  document.addEventListener('touchstart', function(e){
+    if(e.touches && e.touches[0]) handleTouchAvoid(e.touches[0]);
+  }, {passive:true});
+  document.addEventListener('touchmove', function(e){
+    if(e.touches && e.touches[0]) handleTouchAvoid(e.touches[0]);
+  }, {passive:true});
+
+  // Safety net: if somehow clicked/tapped directly, just dodge again — never "succeeds"
+  btnNo.addEventListener('click', function(e){
+    e.preventDefault();
+    moveNoButton(null, null);
+  });
+
+  // Keep the roaming button safely inside viewport on resize/orientation change
+  window.addEventListener('resize', function(){
+    if(noIsRoaming){
+      moveNoButton(null, null);
+    }
+  });
+
+  /* ============ SCREEN 2: Calendar + time ============ */
+  var calGrid = document.getElementById('cal-grid');
+  var calMonthLabel = document.getElementById('cal-month-label');
+  var calPrev = document.getElementById('cal-prev');
+  var calNext = document.getElementById('cal-next');
+
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var viewYear = today.getFullYear();
+  var viewMonth = today.getMonth();
+  var selectedDate = null; // Date object
+
+  var monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  function renderCalendar(){
+    calMonthLabel.textContent = monthNames[viewMonth] + ' ' + viewYear;
+    calGrid.innerHTML = '';
+
+    var firstDay = new Date(viewYear, viewMonth, 1);
+    var startOffset = firstDay.getDay();
+    var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    for(var i=0;i<startOffset;i++){
+      var empty = document.createElement('div');
+      empty.className = 'cal-day empty';
+      calGrid.appendChild(empty);
+    }
+
+    for(var day=1; day<=daysInMonth; day++){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-day';
+      btn.textContent = day;
+      var thisDate = new Date(viewYear, viewMonth, day);
+      thisDate.setHours(0,0,0,0);
+
+      if(thisDate < today){
+        btn.classList.add('disabled');
+        btn.disabled = true;
+      } else {
+        btn.addEventListener('click', (function(d, b){
+          return function(){
+            selectedDate = d;
+            renderCalendar();
+          };
+        })(thisDate, btn));
+      }
+
+      if(thisDate.getTime() === today.getTime()){
+        btn.classList.add('today');
+      }
+      if(selectedDate && thisDate.getTime() === selectedDate.getTime()){
+        btn.classList.add('selected');
+      }
+      calGrid.appendChild(btn);
+    }
+
+    var minNav = new Date(today.getFullYear(), today.getMonth(), 1);
+    calPrev.disabled = (viewYear === minNav.getFullYear() && viewMonth === minNav.getMonth());
+  }
+
+  calPrev.addEventListener('click', function(){
+    viewMonth--;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  calNext.addEventListener('click', function(){
+    viewMonth++;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+
+  renderCalendar();
+
+  var timeGrid = document.getElementById('time-grid');
+  var timeSlots = ["12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","Other time"];
+  var selectedTime = null;
+  var customTimeWrap = document.getElementById('custom-time-wrap');
+  var customTimeInput = document.getElementById('custom-time');
+
+  timeSlots.forEach(function(slot){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'time-btn';
+    b.textContent = slot;
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(timeGrid.children, function(c){ c.classList.remove('selected'); });
+      b.classList.add('selected');
+      if(slot === 'Other time'){
+        customTimeWrap.classList.add('show');
+        selectedTime = null;
+      } else {
+        customTimeWrap.classList.remove('show');
+        selectedTime = slot;
+      }
+    });
+    timeGrid.appendChild(b);
+  });
+
+  customTimeInput.addEventListener('change', function(){
+    if(customTimeInput.value){
+      var parts = customTimeInput.value.split(':');
+      var h = parseInt(parts[0], 10);
+      var m = parts[1];
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      var h12 = h % 12; if(h12 === 0) h12 = 12;
+      selectedTime = h12 + ':' + m + ' ' + ampm;
+    }
+  });
+
+  document.getElementById('btn-to-3').addEventListener('click', function(){
+    if(!selectedDate || !selectedTime){
+      showNote("Pick a day and a time before we continue.");
+      return;
+    }
+    goToScreen(3);
+  });
+
+  /* ============ SCREEN 3: Activities ============ */
+  var icons3 = {
+    icecream: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10a3 3 0 0 1 6 0"/><path d="M6 10a6 6 0 0 1 12 0"/><path d="M8 10l2 11 2 2 2-2 2-11"/></svg>',
+    walk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="1.5"/><path d="M10 8l3-1 3 3-2 2 1 6"/><path d="M13 10l-4 2-2 5"/><path d="M14 12l3 1 2 5"/></svg>',
+    movie: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5l2 4M13 5l2 4M3 12h18"/></svg>',
+    combo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10a3 3 0 0 1 6 0"/><path d="M6 10a6 6 0 0 1 12 0"/><path d="M8 10l1.5 8 M15.5 18l1-6"/><circle cx="18" cy="6" r="2.2"/></svg>',
+    surprise: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a2.5 2.5 0 1 0-2.5 2.5"/><path d="M12 8v13M4 12h16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3z"/><path d="M4 8h16v4H4z"/><path d="M12 8a2.5 2.5 0 1 1 2.5 2.5"/></svg>',
+    food: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 2 2v9M7 3v9M10 3v7M4 3v7"/><path d="M17 3c-2 1-2 5-2 7 0 2 1 3 2 3v9"/></svg>',
+    somewhere: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    other: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10a4 4 0 1 1 5 3.9V16"/><circle cx="12" cy="19.5" r="0.9" fill="currentColor" stroke="none"/></svg>'
+  };
+
+  var activities = [
+    {id:'icecream', title:'Get ice cream', desc:'Simple. Sweet. Hard to go wrong.', icon:icons3.icecream},
+    {id:'walk', title:'Go for a walk', desc:'Good conversation. Fresh air.', icon:icons3.walk},
+    {id:'movie', title:'Watch a movie', desc:'You pick. Horror is allowed.', icon:icons3.movie},
+    {id:'food', title:'Get something to eat', desc:'A proper sit-down meal.', icon:icons3.food, expensive:true},
+    {id:'somewhere', title:'Go somewhere', desc:'An actual outing.', icon:icons3.somewhere, expensive:true},
+    {id:'other', title:'Other', desc:'You have a better idea?', icon:icons3.other, wide:true}
+  ];
+
+  var selectedActivities = {};
+  var otherText = '';
+  var activityGrid = document.getElementById('activity-grid');
+  var otherWrap = document.getElementById('other-wrap');
+  var otherInput = document.getElementById('other-input');
+  var expensiveModal = document.getElementById('expensive-modal');
+
+  activities.forEach(function(a){
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'activity-card' + (a.wide ? ' wide' : '');
+    card.dataset.id = a.id;
+
+    if(a.wide){
+      card.innerHTML = a.icon +
+        '<span class="a-text"><span class="a-title">' + a.title + '</span>' +
+        '<span class="a-desc">' + a.desc + '</span></span>';
+    } else {
+      card.innerHTML = a.icon +
+        '<span class="a-title">' + a.title + '</span>' +
+        '<span class="a-desc">' + a.desc + '</span>';
+    }
+
+    card.addEventListener('click', function(){
+      var willSelect = !selectedActivities[a.id];
+      selectedActivities[a.id] = willSelect;
+      card.classList.toggle('selected', willSelect);
+
+      if(a.id === 'other'){
+        otherWrap.classList.toggle('show', willSelect);
+        if(willSelect) otherInput.focus();
+      }
+      if(a.expensive && willSelect){
+        expensiveModal.classList.add('show');
+      }
+    });
+
+    activityGrid.appendChild(card);
+  });
+
+  document.getElementById('expensive-close').addEventListener('click', function(){
+    expensiveModal.classList.remove('show');
+  });
+
+  otherInput.addEventListener('input', function(){
+    otherText = otherInput.value;
+  });
+
+  document.getElementById('btn-to-4').addEventListener('click', function(){
+    var anySelected = Object.keys(selectedActivities).some(function(k){ return selectedActivities[k]; });
+    if(!anySelected){
+      showNote("Pick at least one thing to do.");
+      return;
+    }
+    buildSummary();
+    goToScreen(4);
+  });
+
+  /* ============ SCREEN 4: Summary ============ */
+  function formatDateLong(d){
+    var weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    return weekdays[d.getDay()] + ', ' + monthNames[d.getMonth()] + ' ' + d.getDate();
+  }
+
+  function buildSummary(){
+    document.getElementById('sum-date').textContent = selectedDate ? formatDateLong(selectedDate) : '—';
+    document.getElementById('sum-time').textContent = selectedTime || '—';
+
+    var labels = activities
+      .filter(function(a){ return selectedActivities[a.id]; })
+      .map(function(a){ return a.id === 'other' ? (otherText.trim() || 'Other') : a.title; });
+    document.getElementById('sum-activities').textContent = labels.length ? labels.join(', ') : '—';
+  }
+
+  document.getElementById('btn-change').addEventListener('click', function(){
+    goToScreen(2);
+  });
+
+  document.getElementById('btn-lock').addEventListener('click', function(){
+    goToScreen(5);
+    launchConfetti();
+  });
+
+  /* ============ SCREEN 5: Final + WhatsApp ============ */
+  function launchConfetti(){
+    if(reduceMotion) return;
+    var layer = document.getElementById('confetti-layer');
+    layer.innerHTML = '';
+    var colors = ['#8FAE86', '#5C7A52', '#A9C49E', '#FBF7EE', '#3F5936'];
+    var count = window.innerWidth < 480 ? 26 : 42;
+    for(var i=0;i<count;i++){
+      var p = document.createElement('div');
+      p.className = 'confetti-piece';
+      var size = 6 + Math.random()*7;
+      p.style.width = size + 'px';
+      p.style.height = (size * 0.5) + 'px';
+      p.style.left = (Math.random()*100) + 'vw';
+      p.style.background = colors[Math.floor(Math.random()*colors.length)];
+      p.style.setProperty('--rot', (Math.random()*360) + 'deg');
+      var dur = 2.6 + Math.random()*2;
+      p.style.animationDuration = dur + 's';
+      p.style.animationDelay = (Math.random()*0.6) + 's';
+      layer.appendChild(p);
+    }
+    setTimeout(function(){ layer.innerHTML = ''; }, 5200);
+  }
+
+  document.getElementById('btn-whatsapp').addEventListener('click', function(){
+    var dateStr = selectedDate ? formatDateLong(selectedDate) : 'TBD';
+    var timeStr = selectedTime || 'TBD';
+    var labels = activities
+      .filter(function(a){ return selectedActivities[a.id]; })
+      .map(function(a){ return a.id === 'other' ? (otherText.trim() || 'Other') : a.title; });
+    var planStr = labels.length ? labels.join(' + ') : 'Something fun';
+
+    var message = "HEY \uD83D\uDC40\n\n" +
+      "Looks like we actually have a plan.\n\n" +
+      "Date: " + dateStr + "\n" +
+      "Time: " + timeStr + "\n" +
+      "Plan: " + planStr + "\n\n" +
+      "See you then.";
+
+    var phone = "260768689374";
+    var url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(message);
+    window.open(url, '_blank', 'noopener');
+  });
+
+})();
+</script>
+</body>
+</html>
